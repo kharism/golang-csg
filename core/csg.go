@@ -175,7 +175,7 @@ func ToGeometry(csg *CSG, toMatrix *Matrix4) *Geometry {
 }
 
 func FromMesh(mesh *Mesh, objectIndex []float32) *CSG {
-	csg := FromGeometry(&mesh.Geometry, objectIndex)
+	csg := FromGeometry(mesh.Geometry, objectIndex)
 	ttvv0 := NewVector(0, 0, 0)
 	tmpm3 := NewMatrix3()
 
@@ -192,8 +192,34 @@ func FromMesh(mesh *Mesh, objectIndex []float32) *CSG {
 }
 func ToMesh(csg *CSG, toMatrix *Matrix4) *Mesh {
 	geom := ToGeometry(csg, toMatrix)
-	m := Mesh{}
+	m := &Mesh{}
 	m.Geometry = geom
 	m.Matrix.Copy(toMatrix)
-	m.Matrix.Decom
+	m.Matrix.Decompose(m.Position, *m.Quaterion, m.Scale)
+	m.Rotation.SetFromQuaternion(m.Quaterion, m.Rotation._order, false)
+	m.UpdateMatrixWorld(false)
+	return m
+}
+func (m *CSG) Clone() *CSG {
+	newcsg := &CSG{}
+	newcsg.Polygons = []*Polygon{}
+	for i := range m.Polygons {
+		if !math.IsInf(m.Polygons[i].Plane.W, 0) {
+			newcsg.Polygons = append(newcsg.Polygons, m.Polygons[i].Clone())
+		}
+	}
+	return newcsg
+}
+func (m *CSG) Subtract(csg *CSG) *CSG {
+	a := NewNode(m.Clone().Polygons)
+	b := NewNode(csg.Clone().Polygons)
+	a.Invert()
+	a.ClipTo(b)
+	b.ClipTo(a)
+	b.Invert()
+	b.ClipTo(a)
+	b.Invert()
+	a.Build(b.AllPolygons())
+	a.Invert()
+	return FromPolygons(a.AllPolygons())
 }
