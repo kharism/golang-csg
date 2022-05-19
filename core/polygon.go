@@ -2,14 +2,20 @@ package core
 
 type Polygon struct {
 	Plane    *Plane
-	Shared   interface{}
+	Shared   int32
 	Vertices []*Vertex
 }
 
 func NewPolygon(vertices []*Vertex, shared interface{}) *Polygon {
 	p := &Polygon{}
-	p.Shared = shared
+	if shared != nil {
+		p.Shared = shared.(int32)
+	} else {
+		p.Shared = -1
+	}
+
 	p.Vertices = vertices
+	// fmt.Println("VERTEX POLYGON", toolkit.JsonString(vertices))
 	p.Plane = FromPoints(vertices[0].Pos, vertices[1].Pos, vertices[2].Pos)
 	return p
 }

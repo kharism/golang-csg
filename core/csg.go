@@ -1,7 +1,10 @@
 package core
 
 import (
+	"fmt"
 	"math"
+
+	"github.com/eaciit/toolkit"
 )
 
 type CSG struct {
@@ -14,7 +17,7 @@ func FromPolygons(polygons []*Polygon) *CSG {
 	return csg
 }
 
-func FromGeometry(geom *Geometry, objectIndex []float32) *CSG {
+func FromGeometry(geom *Geometry, objectIndex interface{}) *CSG {
 	polygons := []*Polygon{}
 	position := geom.Position
 	normal := geom.Normal
@@ -23,18 +26,24 @@ func FromGeometry(geom *Geometry, objectIndex []float32) *CSG {
 	uv := geom.UV
 
 	var index []int32
+	// fmt.Println("DDDDD", len(geom.Index), len(position), 3)
 	if geom.Index != nil {
 		index = geom.Index
 	} else {
 		indexSize := len(position) / 3
 		index = make([]int32, indexSize)
+		for i := int32(0); i < int32(indexSize); i++ {
+			index[i] = i
+		}
 	}
 	triCount := len(index) / 3
 	polygons = make([]*Polygon, triCount)
+
 	pli := 0
 	l := len(index)
+	// fmt.Println(len(polygons), l, position)
 	for i := 0; i < l; i += 3 {
-		Vertices := []*Vertex{}
+		Vertices := make([]*Vertex, 3)
 		for j := 0; j < 3; j++ {
 			vi := index[i+j]
 			vp := vi * 3
@@ -42,23 +51,28 @@ func FromGeometry(geom *Geometry, objectIndex []float32) *CSG {
 			x := position[vp]
 			y := position[vp+1]
 			z := position[vp+2]
+			// Logger.Println("VP", vp, position[vp], vp+1, position[vp+1], vp+2, position[vp+2])
 			nx := normal[vp]
 			ny := normal[vp+1]
 			nz := normal[vp+2]
 			u := uv[vt]
 			v := uv[vt+1]
-			pp := NewVertex(
-				NewVector(x, y, z),
-				NewVector(nx, ny, nz),
-				NewVector(u, v, 0),
-				NewVector(colors[vt], colors[vt+1], colors[vt+2]),
-			)
-			Vertices[j] = &pp
+			pp := &Vertex{}
+			pp.Pos = NewVector(x, y, z)
+			pp.Normal = NewVector(nx, ny, nz)
+			pp.UV = NewVector(u, v, 0)
+			if colors != nil {
+				pp.Color = NewVector(colors[vt], colors[vt+1], colors[vt+2])
+			}
+			Vertices[j] = pp
+			// fmt.Println("Vertices[j]", i+j, vi, toolkit.JsonString(Vertices[j]), pli)
 		}
+		// fmt.Println("Vertices DONE", toolkit.JsonString(Vertices))
 		if groups != nil && len(groups) > 0 {
 			for _, grp := range groups {
 				if index[i] >= grp.Start && index[i] < grp.Start+grp.Count {
 					polygons[pli] = NewPolygon(Vertices, grp.MaterialIndex)
+					// fmt.Println("polygons[pli]XY", pli, toolkit.JsonString(Vertices), toolkit.JsonString(polygons[pli]))
 				}
 
 			}
@@ -68,7 +82,9 @@ func FromGeometry(geom *Geometry, objectIndex []float32) *CSG {
 		pli++
 	}
 	realPolygon := []*Polygon{}
+	fmt.Println(polygons)
 	for _, p := range polygons {
+
 		if !math.IsNaN(p.Plane.Normal.X) {
 			realPolygon = append(realPolygon, p)
 		}
@@ -101,13 +117,21 @@ func ToGeometry(csg *CSG, toMatrix *Matrix4) *Geometry {
 	normals := NewNBuf3(triCount * 3 * 3)
 	uvs := NewNBuf2(triCount * 3 * 3)
 	var colors *NBuf3
-	grps := JSMap{}
-	dgrp := JSMap{}
-	for _, p := range ps {
+	grps := map[int32][]int32{}
+	dgrp := []int32{}
+	for idx, p := range ps {
 		pvs := p.Vertices
 		pvlen := len(p.Vertices)
-		if grps.Storage[p.Shared] == nil {
-			grps.Storage[p.Shared] = []interface{}{}
+		fmt.Println("idx", idx, len(grps), len(dgrp))
+
+		// fmt.Println("grps")
+		// fmt.Println(toolkit.JsonString(grps), )
+		// fmt.Println("dgrp")
+		// fmt.Println(toolkit.JsonString(grps), )
+		if p.Shared != -1 {
+			if _, ok := grps[p.Shared]; !ok {
+				grps[p.Shared] = []int32{}
+			}
 		}
 
 		if pvlen > 0 && pvs[0].Color != nil {
@@ -115,17 +139,29 @@ func ToGeometry(csg *CSG, toMatrix *Matrix4) *Geometry {
 				colors = NewNBuf3(triCount * 3 * 3)
 			}
 		}
+		if idx == 26 || idx == 27 {
+			fmt.Println("grps", grps)
+			fmt.Println("grps", dgrp)
+			fmt.Println("p.Shared", p.Shared)
+			fmt.Println(p.Vertices[0].Pos, p.Vertices[1].Pos, p.Vertices[2].Pos)
+			fmt.Println(">>>>")
+		}
 		for j := 3; j <= pvlen; j++ {
 			//var grp map[interface{}]interface{}
-			if p.Shared == nil {
-				dgrp.Push(vertices.Top / 3)
-				dgrp.Push(vertices.Top/3 + 1)
-				dgrp.Push(vertices.Top/3 + 2)
+			if p.Shared == -1 {
+				dgrp = append(dgrp, int32(vertices.Top/3))
+				dgrp = append(dgrp, int32(vertices.Top/3+1))
+				dgrp = append(dgrp, int32(vertices.Top/3+2))
 			} else {
-				ll := grps.Storage[p.Shared].([]interface{})
-				ll = append(ll, vertices.Top/3)
-				ll = append(ll, vertices.Top/3+1)
-				ll = append(ll, vertices.Top/3+2)
+				ll := grps[p.Shared]
+				ll = append(ll, int32(vertices.Top/3))
+				ll = append(ll, int32(vertices.Top/3+1))
+				ll = append(ll, int32(vertices.Top/3+2))
+				grps[p.Shared] = ll
+			}
+			if idx == 26 {
+				fmt.Println(toolkit.JsonString(dgrp), len(dgrp))
+				fmt.Println(toolkit.JsonString(grps), len(grps))
 			}
 			vertices.Write(pvs[0].Pos)
 			vertices.Write(pvs[j-2].Pos)
@@ -145,6 +181,7 @@ func ToGeometry(csg *CSG, toMatrix *Matrix4) *Geometry {
 				colors.Write(pvs[j-1].Color)
 			}
 		}
+		fmt.Println("=======")
 	}
 	geom.Position = vertices.Arr
 	geom.Normal = normals.Arr
@@ -154,31 +191,37 @@ func ToGeometry(csg *CSG, toMatrix *Matrix4) *Geometry {
 	if colors != nil {
 		geom.Color = colors.Arr
 	}
-	for gi := 0; gi < len(grps.Storage); gi++ {
-		if _, ok := grps.Storage[gi]; !ok {
-			grps.Add(int32(gi), []interface{}{})
+	// fmt.Println(len(grps))
+	for gi := 0; gi < len(grps); gi++ {
+		if _, ok := grps[int32(gi)]; !ok {
+			grps[int32(gi)] = []int32{} //.Add(int32(gi), []interface{}{})
 		}
 	}
-	if len(grps.Storage) > 0 {
+	// fmt.Println(grps)
+	if len(grps) > 0 {
 		index := []int32{}
 		gbase := 0
-		for gi := 0; gi < len(grps.Storage); gi++ {
-			geom.AddGroup(gbase, len(grps.Storage[gi].([]interface{})), gi)
-			gbase += len(grps.Storage[gi].([]interface{}))
-			kk := grps.Storage[gi].([]interface{})
+		for gi := 0; gi < len(grps); gi++ {
+			geom.AddGroup(int32(gbase), int32(len(grps[int32(gi)])), int32(gi))
+			gbase += len(grps[int32(gi)])
+			kk := grps[int32(gi)]
 			for _, val := range kk {
-				index = append(index, val.(int32))
+				index = append(index, val)
 			}
 		}
+		geom.AddGroup(int32(gbase), int32(len(dgrp)), int32(len(grps)))
+		index = append(index, dgrp...)
+		geom.Index = index
+
 	}
 	return geom
 }
 
-func FromMesh(mesh *Mesh, objectIndex []float32) *CSG {
+func FromMesh(mesh *Mesh, objectIndex interface{}) *CSG {
 	csg := FromGeometry(mesh.Geometry, objectIndex)
 	ttvv0 := NewVector(0, 0, 0)
 	tmpm3 := NewMatrix3()
-
+	// fmt.Println("mesh.Matrix", mesh.Matrix)
 	tmpm3.getNormalMatrix(mesh.Matrix)
 	for i := 0; i < len(csg.Polygons); i++ {
 		p := csg.Polygons[i]
@@ -213,13 +256,25 @@ func (m *CSG) Clone() *CSG {
 func (m *CSG) Subtract(csg *CSG) *CSG {
 	a := NewNode(m.Clone().Polygons)
 	b := NewNode(csg.Clone().Polygons)
+	//fmt.Println(a.Polygons, a.Front.Polygons, a.Back.Polygons)
+	//fmt.Println(b.Polygons, b.Front.Polygons, b.Back.Polygons)
+	// fmt.Println("Before invert")
+	// fmt.Println(toolkit.JsonString(m.Polygons))
 	a.Invert()
+	// fmt.Println(toolkit.JsonString(m.Polygons))
+	//fmt.Println(a)
+	// os.Exit(-1)
 	a.ClipTo(b)
+	// fmt.Println(len(a.Polygons))
+	// fmt.Println(toolkit.JsonString(a.Polygons))
 	b.ClipTo(a)
+	// fmt.Println(len(b.Polygons))
 	b.Invert()
 	b.ClipTo(a)
 	b.Invert()
 	a.Build(b.AllPolygons())
 	a.Invert()
+	fmt.Println("a.polygon", len(a.AllPolygons()))
+	// fmt.Println(toolkit.JsonString(a.Polygons))
 	return FromPolygons(a.AllPolygons())
 }

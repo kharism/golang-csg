@@ -1,11 +1,18 @@
 package core
 
+import (
+	"log"
+	"os"
+)
+
 type Node struct {
 	Polygons []*Polygon
 	Plane    *Plane
 	Front    *Node
 	Back     *Node
 }
+
+var Logger = log.New(os.Stdout, ">>", log.Llongfile)
 
 func NewNode(polygons []*Polygon) *Node {
 	newNode := &Node{}
@@ -92,16 +99,24 @@ func (n *Node) Build(polygons []*Polygon) {
 	}
 	FrontPolygon := []*Polygon{}
 	BackPolygon := []*Polygon{}
-
+	// fmt.Println(len(polygons))
+	// os.Exit(-1)
+	// Logger.Println(n.Plane.Normal, n.Plane.W)
 	for i := 0; i < len(polygons); i++ {
 		n.Plane.SplitPolygon(polygons[i], &(n.Polygons), &(n.Polygons), &FrontPolygon, &BackPolygon)
+		// Logger.Printf("%s\n", tk.JsonString(polygons[i]))
+		// Logger.Println("Node Build Split polygon", i, len(n.Polygons), len(FrontPolygon), len(BackPolygon))
 	}
+	// Logger.Println("FrontPolygon Length", len(FrontPolygon))
+	// Logger.Println("BackPolygon Length", len(BackPolygon))
+	// os.Exit(-1)
 	if len(FrontPolygon) > 0 {
 		if n.Front == nil {
 			n.Front = NewNode(nil)
 		}
 		n.Front.Build(FrontPolygon)
 	}
+
 	if len(BackPolygon) > 0 {
 		if n.Back == nil {
 			n.Back = NewNode(nil)

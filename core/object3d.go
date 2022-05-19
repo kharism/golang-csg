@@ -11,6 +11,16 @@ type Object3D struct {
 	Scale       *Vector
 }
 
+func NewObject3D() *Object3D {
+	n := &Object3D{}
+	n.Matrix = NewMatrix4()
+	n.MatrixWorld = NewMatrix4()
+	n.Quaterion = &Quaterion{}
+	n.Rotation = &Euler{}
+	return n
+
+}
+
 func (o *Object3D) UpdateMatrixWorld(force bool) {
 	if o.Parent == nil {
 		o.MatrixWorld.Copy(o.Matrix)

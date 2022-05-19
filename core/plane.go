@@ -12,7 +12,8 @@ func NewPlane(Normal *Vector, W float64) *Plane {
 }
 
 func FromPoints(a, b, c *Vector) *Plane {
-	n := b.Sub(a).Cross(c.Sub(a)).Normalize()
+	n := (&Vector{}).Copy(b).Sub(a).Cross((&Vector{}).Copy(c).Sub(a)).Normalize()
+	// n := b.Sub(a).Cross(c.Sub(a)).Normalize()
 	return NewPlane(n, n.Dot(a))
 }
 
@@ -38,11 +39,13 @@ func (p *Plane) SplitPolygon(polygon *Polygon, coplanarFront *[]*Polygon, coplan
 
 	polygonType := 0
 	vertTypes := []int{}
-
+	// fmt.Println("polygon.Vertices", toolkit.JsonString(polygon.Vertices))
+	// fmt.Println(p.Normal, p.W)
 	for i := 0; i < len(polygon.Vertices); i++ {
 		t := p.Normal.Dot(polygon.Vertices[i].Pos) - p.W
+		// fmt.Println("t", t, p.Normal.Dot(polygon.Vertices[i].Pos))
 		vertType := 0
-		if t < EPSILON {
+		if t < -EPSILON {
 			vertType = BACK
 		} else if t > EPSILON {
 			vertType = FRONT
@@ -50,6 +53,7 @@ func (p *Plane) SplitPolygon(polygon *Polygon, coplanarFront *[]*Polygon, coplan
 			vertType = COPLANAR
 		}
 		polygonType |= vertType
+		// fmt.Println("polygon.Vertices", polygon.Vertices[i].Pos, "vertType", vertType)
 		vertTypes = append(vertTypes, vertType)
 	}
 	switch polygonType {

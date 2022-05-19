@@ -22,10 +22,21 @@ func (v *Vertex) Flip() {
 // interpolating all properties using a parameter of `t`. Subclasses should
 // override this to interpolate additional properties.
 func (v *Vertex) interpolate(other *Vertex, t float64) *Vertex {
-	return &Vertex{
-		v.Pos.Clone().Lerp(other.Pos, t),
-		v.Normal.Clone().Lerp(other.Normal, t),
-		v.UV.Clone().Lerp(other.UV, t),
-		v.Color.Clone().Lerp(other.Color, t),
+	if v.Color != nil {
+		return &Vertex{
+			v.Pos.Clone().Lerp(other.Pos, t),
+			v.Normal.Clone().Lerp(other.Normal, t),
+			v.UV.Clone().Lerp(other.UV, t),
+			v.Color.Clone().Lerp(other.Color, t),
+		}
+	} else {
+		return &Vertex{
+			v.Pos.Clone().Lerp(other.Pos, t),
+			v.Normal.Clone().Lerp(other.Normal, t),
+			v.UV.Clone().Lerp(other.UV, t),
+			nil,
+			//v.Color.Clone().Lerp(other.Color, t),
+		}
 	}
+
 }

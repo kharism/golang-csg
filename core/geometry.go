@@ -1,5 +1,10 @@
 package core
 
+import (
+	"bytes"
+	"fmt"
+)
+
 type Geometry struct {
 	//Attributes map[string]interface{}
 	Index    []int32
@@ -61,7 +66,21 @@ func NewGeometry() *Geometry {
 	geo.Position = nil
 	return geo
 }
-func (g *Geometry) AddGroup(start, count, materialIndex int) {
+func (g *Geometry) ToObj() string {
+	output := []byte{}
+	buffer := bytes.NewBuffer(output)
+	for i := 0; i < len(g.Position); i += 3 {
+		buffer.WriteString(fmt.Sprintf("v %f %f %f\n", g.Position[i], g.Position[i+1], g.Position[i+2]))
+	}
+	for i := 0; i < len(g.Index); i += 3 {
+		buffer.WriteString(fmt.Sprintf("f %d %d %d\n", g.Index[i]+1, g.Index[i+1]+1, g.Index[i+2]+1))
+	}
+	return buffer.String()
+}
+func (g *Geometry) AddGroup(start, count, materialIndex int32) {
 	newGroup := Group{}
+	newGroup.Start = start
+	newGroup.Count = count
+	newGroup.MaterialIndex = materialIndex
 	g.Groups = append(g.Groups, newGroup)
 }
