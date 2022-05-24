@@ -1,9 +1,10 @@
 package main
 
 import (
-	"csg/core"
 	"fmt"
 	"os"
+
+	"github.com/kharism/golang-csg/core"
 )
 
 func main() {
