@@ -1,10 +1,7 @@
 package core
 
 import (
-	"fmt"
 	"math"
-
-	"github.com/eaciit/toolkit"
 )
 
 type CSG struct {
@@ -82,7 +79,7 @@ func FromGeometry(geom *Geometry, objectIndex interface{}) *CSG {
 		pli++
 	}
 	realPolygon := []*Polygon{}
-	fmt.Println(polygons)
+	// fmt.Println(polygons)
 	for _, p := range polygons {
 
 		if !math.IsNaN(p.Plane.Normal.X) {
@@ -119,10 +116,10 @@ func ToGeometry(csg *CSG, toMatrix *Matrix4) *Geometry {
 	var colors *NBuf3
 	grps := map[int32][]int32{}
 	dgrp := []int32{}
-	for idx, p := range ps {
+	for _, p := range ps {
 		pvs := p.Vertices
 		pvlen := len(p.Vertices)
-		fmt.Println("idx", idx, len(grps), len(dgrp))
+		// fmt.Println("idx", idx, len(grps), len(dgrp))
 
 		// fmt.Println("grps")
 		// fmt.Println(toolkit.JsonString(grps), )
@@ -139,13 +136,13 @@ func ToGeometry(csg *CSG, toMatrix *Matrix4) *Geometry {
 				colors = NewNBuf3(triCount * 3 * 3)
 			}
 		}
-		if idx == 26 || idx == 27 {
-			fmt.Println("grps", grps)
-			fmt.Println("grps", dgrp)
-			fmt.Println("p.Shared", p.Shared)
-			fmt.Println(p.Vertices[0].Pos, p.Vertices[1].Pos, p.Vertices[2].Pos)
-			fmt.Println(">>>>")
-		}
+		// if idx == 26 || idx == 27 {
+		// 	fmt.Println("grps", grps)
+		// 	fmt.Println("grps", dgrp)
+		// 	fmt.Println("p.Shared", p.Shared)
+		// 	fmt.Println(p.Vertices[0].Pos, p.Vertices[1].Pos, p.Vertices[2].Pos)
+		// 	fmt.Println(">>>>")
+		// }
 		for j := 3; j <= pvlen; j++ {
 			//var grp map[interface{}]interface{}
 			if p.Shared == -1 {
@@ -159,10 +156,10 @@ func ToGeometry(csg *CSG, toMatrix *Matrix4) *Geometry {
 				ll = append(ll, int32(vertices.Top/3+2))
 				grps[p.Shared] = ll
 			}
-			if idx == 26 {
-				fmt.Println(toolkit.JsonString(dgrp), len(dgrp))
-				fmt.Println(toolkit.JsonString(grps), len(grps))
-			}
+			// if idx == 26 {
+			// 	fmt.Println(toolkit.JsonString(dgrp), len(dgrp))
+			// 	fmt.Println(toolkit.JsonString(grps), len(grps))
+			// }
 			vertices.Write(pvs[0].Pos)
 			vertices.Write(pvs[j-2].Pos)
 			vertices.Write(pvs[j-1].Pos)
@@ -181,7 +178,7 @@ func ToGeometry(csg *CSG, toMatrix *Matrix4) *Geometry {
 				colors.Write(pvs[j-1].Color)
 			}
 		}
-		fmt.Println("=======")
+		// fmt.Println("=======")
 	}
 	geom.Position = vertices.Arr
 	geom.Normal = normals.Arr
@@ -274,7 +271,7 @@ func (m *CSG) Subtract(csg *CSG) *CSG {
 	b.Invert()
 	a.Build(b.AllPolygons())
 	a.Invert()
-	fmt.Println("a.polygon", len(a.AllPolygons()))
+	// fmt.Println("a.polygon", len(a.AllPolygons()))
 	// fmt.Println(toolkit.JsonString(a.Polygons))
 	return FromPolygons(a.AllPolygons())
 }

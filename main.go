@@ -1044,9 +1044,16 @@ func main() {
 	geom3 := core.ToGeometry(csg3, mesh1.Matrix)
 	//fmt.Println("DSDS", len(geom3.Position), len(geom3.Index))
 	// geom3 := core.ToGeometry(csg3, nil)
-	fmt.Println(len(geom3.Position), len(geom3.Index))
+	// fmt.Println(len(geom3.Position), len(geom3.Index))
 	xx, _ := os.OpenFile("rr.obj", os.O_CREATE|os.O_RDWR, 0755)
 	xx.WriteString(geom3.ToObj())
 	xx.Close()
-	//fmt.Println()
+
+	raycaster := core.NewRaycaster(core.NewVector(0, 0, 20), core.NewVector(0, 0, -1))
+	sqGeo := core.NewGeometry()
+	sqGeo.Position = []float64{1, 1, 0, 1, -1, 0, -1, -1, 0, -1, 1, 0}
+	sqGeo.Index = []int32{0, 1, 2, 2, 3, 0}
+	meshX := core.NewMesh(sqGeo)
+	intersections := raycaster.IntersectObject(meshX, true)
+	fmt.Println(intersections)
 }

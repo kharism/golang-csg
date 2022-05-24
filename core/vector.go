@@ -9,11 +9,89 @@ type Vector struct {
 func NewVector(x, y, z float64) *Vector {
 	return &Vector{x, y, z}
 }
+func (this *Vector) LengthSq() float64 {
 
+	return this.X*this.X + this.Y*this.Y + this.Z*this.Z
+
+}
+func (v *Vector) DistanceTo(d *Vector) float64 {
+	return math.Sqrt(v.DistanceToSquared(d))
+}
+func (v *Vector) CrossVectors(a, b *Vector) *Vector {
+	ax := a.X
+	ay := a.Y
+	az := a.Z
+
+	bx := b.X
+	by := b.Y
+	bz := b.Z
+
+	v.X = ay*bz - az*by
+	v.Y = az*bx - ax*bz
+	v.Z = ax*by - ay*bx
+
+	return v
+}
 func (v *Vector) Copy(a *Vector) *Vector {
 	v.X = a.X
 	v.Y = a.Y
 	v.Z = a.Z
+	return v
+}
+func (v *Vector) Set(x, y, z float64) *Vector {
+	v.X = x
+	v.Y = y
+	v.Z = z
+	return v
+}
+func (this *Vector) DistanceToSquared(v *Vector) float64 {
+	dx := this.X - v.X
+	dy := this.Y - v.Y
+	dz := this.Z - v.Z
+	return dx*dx + dy*dy + dz*dz
+}
+
+func (this *Vector) TransformDirection(m *Matrix4) *Vector {
+
+	// input: THREE.Matrix4 affine matrix
+	// vector interpreted as a direction
+
+	x := this.X
+	y := this.Y
+	z := this.Z
+	e := m.elements
+
+	this.X = e[0]*x + e[4]*y + e[8]*z
+	this.Y = e[1]*x + e[5]*y + e[9]*z
+	this.Z = e[2]*x + e[6]*y + e[10]*z
+
+	return this.Normalize()
+
+}
+func (v *Vector) SubVectors(a, b *Vector) *Vector {
+
+	v.X = a.X - b.X
+	v.Y = a.Y - b.Y
+	v.Z = a.Z - b.Z
+	return v
+}
+func (v *Vector) MultiplyScalar(f float64) *Vector {
+	v.X *= f
+	v.Y *= f
+	v.Z *= f
+
+	return v
+}
+func (v *Vector) Max(a *Vector) *Vector {
+	v.X = math.Max(v.X, a.X)
+	v.Y = math.Max(v.Y, a.Y)
+	v.Z = math.Max(v.Z, a.Z)
+	return v
+}
+func (v *Vector) Min(a *Vector) *Vector {
+	v.X = math.Min(v.X, a.X)
+	v.Y = math.Min(v.Y, a.Y)
+	v.Z = math.Min(v.Z, a.Z)
 	return v
 }
 func (v *Vector) Clone() *Vector {
