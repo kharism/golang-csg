@@ -1054,7 +1054,10 @@ func main() {
 	sqGeo := core.NewGeometry()
 	sqGeo.Position = []float64{1, 1, 0, 1, -1, 0, -1, -1, 0, -1, 1, 0}
 	sqGeo.Index = []int32{0, 1, 2, 2, 3, 0}
+	sqGeo.ComputeVertexNormals()
+	fmt.Println("sqGeo.Normal", sqGeo.Normal)
 	meshX := core.NewMesh(sqGeo)
 	intersections := raycaster.IntersectObject(meshX, true)
 	fmt.Println(intersections)
+
 }

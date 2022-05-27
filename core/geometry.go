@@ -189,6 +189,75 @@ func ApplyMatrix4(attribute []float64, m *Matrix4) []float64 {
 	}
 	return attribute
 }
+func (g *Geometry) ComputeVertexNormals() {
+	index := g.Index
+	positionAttribute := g.Position
+	normalAttribute := make([]float64, len(positionAttribute))
+	pA := NewVector(0, 0, 0)
+	pB := NewVector(0, 0, 0)
+	pC := NewVector(0, 0, 0)
+
+	nA := NewVector(0, 0, 0)
+	nB := NewVector(0, 0, 0)
+	nC := NewVector(0, 0, 0)
+
+	cb := NewVector(0, 0, 0)
+	ab := NewVector(0, 0, 0)
+	il := len(index)
+	for i := 0; i < il; i += 3 {
+		vA := index[i]
+		vB := index[(i + 1)]
+		vC := index[(i + 2)]
+
+		pA.Set(positionAttribute[vA*3], positionAttribute[vA*3+1], positionAttribute[vA*3+2])
+		pB.Set(positionAttribute[vB*3], positionAttribute[vB*3+1], positionAttribute[vB*3+2])
+		pC.Set(positionAttribute[vC*3], positionAttribute[vC*3+1], positionAttribute[vC*3+2])
+
+		// fmt.Println("pA, pB, pC", pA, pB, pC)
+
+		cb.SubVectors(pC, pB)
+		ab.SubVectors(pA, pB)
+		cb.Cross(ab)
+
+		nA.Set(normalAttribute[vA*3], normalAttribute[vA*3+1], normalAttribute[vA*3+2])
+		nB.Set(normalAttribute[vB*3], normalAttribute[vB*3+1], normalAttribute[vB*3+2])
+		nC.Set(normalAttribute[vC*3], normalAttribute[vC*3+1], normalAttribute[vC*3+2])
+
+		// fmt.Println("nA,nB,nC", nA, nB, nC)
+
+		nA.Add(cb)
+		nB.Add(cb)
+		nC.Add(cb)
+
+		normalAttribute[vA*3] = nA.X
+		normalAttribute[vA*3+1] = nA.Y
+		normalAttribute[vA*3+2] = nA.Z
+
+		normalAttribute[vB*3] = nB.X
+		normalAttribute[vB*3+1] = nB.Y
+		normalAttribute[vB*3+2] = nB.Z
+
+		normalAttribute[vC*3] = nC.X
+		normalAttribute[vC*3+1] = nC.Y
+		normalAttribute[vC*3+2] = nC.Z
+
+	}
+	g.Normal = normalAttribute
+	g.NormalizeNormal()
+
+}
+func (g *Geometry) NormalizeNormal() {
+	normal := g.Normal
+	il := len(normal) / 3
+	for i := 0; i < il; i++ {
+		_vector := Vector{normal[i*3], normal[i*3+1], normal[i*3+2]}
+		_vector.Normalize()
+		normal[i*3] = _vector.X
+		normal[i*3+1] = _vector.Y
+		normal[i*3+2] = _vector.Z
+	}
+	g.Normal = normal
+}
 func (g *Geometry) ComputeBoundingBox() {
 	if g.BoundingBox == nil {
 		g.BoundingBox = &Box3{}
