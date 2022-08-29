@@ -261,6 +261,7 @@ func (g *Geometry) NormalizeNormal() {
 func (g *Geometry) ComputeBoundingBox() {
 	if g.BoundingBox == nil {
 		g.BoundingBox = &Box3{}
+		g.BoundingBox.MakeEmpty()
 	}
 	position := g.Position
 	morphAttributesPosition := g.MorphAttribute["position"]
@@ -288,9 +289,9 @@ func (g *Geometry) ComputeBoundingBox() {
 					g.BoundingBox.ExpandByPoint(_box.Max)
 				}
 			}
-		} else {
-			g.BoundingBox.MakeEmpty()
 		}
+	} else {
+		g.BoundingBox.MakeEmpty()
 	}
 }
 func (g *Geometry) ApplyMatrix4(m *Matrix4) *Geometry {
